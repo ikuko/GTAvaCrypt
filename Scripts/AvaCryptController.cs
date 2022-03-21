@@ -1,4 +1,6 @@
 ﻿#if UNITY_EDITOR
+using System;
+using System.IO;
 using System.Linq;
 using UnityEditor;
 using UnityEditor.Animations;
@@ -65,23 +67,26 @@ namespace GeoTetra.GTAvaCrypt
         private void ValidateClip(GameObject gameObject, AnimatorController controller, int index)
         {
             string controllerPath = AssetDatabase.GetAssetPath(controller);
-            string controllerFileName = System.IO.Path.GetFileName(controllerPath);
             
             string clipName = $"{gameObject.name}_{_avaCryptKeyNames[index]}";
             string clipNameFalse = $"{clipName}_False";
             string clipNameFalseFile = $"{clipNameFalse}.anim";
             string clipNameTrue = $"{clipName}_True";
             string clipNameTrueFile = $"{clipNameTrue}.anim";
-            
+
+            if (!AssetDatabase.IsValidFolder(Path.Combine(Path.GetDirectoryName(controllerPath), "GTAvaCrypt")))
+                AssetDatabase.CreateFolder(Path.GetDirectoryName(controllerPath), "GTAvaCrypt");
+
             if (controller.animationClips.All(c => c.name != clipNameFalse))
             {
                 _clipsFalse[index] = new AnimationClip()
                 {
                     name = clipNameFalse
                 };
-                string clip0Path = controllerPath.Replace(controllerFileName, clipNameFalseFile);
+                string clip0Path = Path.Combine(Path.GetDirectoryName(controllerPath), "GTAvaCrypt", clipNameFalseFile);
                 AssetDatabase.CreateAsset(_clipsFalse[index], clip0Path);
                 AssetDatabase.SaveAssets();
+                AssetDatabase.Refresh();
                 Debug.Log($"Adding and Saving Clip: {clip0Path}");
             }
             else
@@ -96,9 +101,10 @@ namespace GeoTetra.GTAvaCrypt
                 {
                     name = clipNameTrue
                 };
-                string clip100Path = controllerPath.Replace(controllerFileName, clipNameTrueFile);
+                string clip100Path = Path.Combine(Path.GetDirectoryName(controllerPath), "GTAvaCrypt", clipNameTrueFile);
                 AssetDatabase.CreateAsset(_clipsTrue[index], clip100Path);
                 AssetDatabase.SaveAssets();
+                AssetDatabase.Refresh();
                 Debug.Log($"Adding and Saving Clip: {clip100Path}");
             }
             else
@@ -129,59 +135,23 @@ namespace GeoTetra.GTAvaCrypt
         {
             for (int i = 0; i < _avaCryptKeyNames.Length; ++i)
             {
-                if (controller.layers.All(l => l.name != _avaCryptKeyNames[i]))
-                {
-                    CreateLayer(i, controller);
-                }
-                else
+                if (controller.layers.Any(l => l.name == _avaCryptKeyNames[i]))
                 {
                     Debug.Log($"Layer already existing: {_avaCryptKeyNames[i]}");
-                    AnimatorControllerLayer layer = controller.layers.FirstOrDefault(l => l.name == _avaCryptKeyNames[i]);
+                    var layerIdx = Array.FindIndex(controller.layers, l => l.name == _avaCryptKeyNames[i]);
+                    AnimatorControllerLayer layer = controller.layers[layerIdx];
 
-                    if (layer == null || layer.stateMachine == null)
-                    {
-                        Debug.Log("Layer missing state machine.");
-                        
-                        controller.RemoveLayer(controller.layers.ToList().IndexOf(layer));
+                    if (layer.stateMachine != null)
+                        AssetDatabase.RemoveObjectFromAsset(layer.stateMachine);
 
-                        CreateLayer(i, controller);
-                    }
-                    else
-                    {
-                        ValidateBitKeySwitch(i, layer, controller);
-                    }
+                    Debug.Log("Array.IndexOf(controller.layers, layer)=" + layerIdx);
+                    controller.RemoveLayer(layerIdx);
                 }
+
+                CreateLayer(i, controller);
             }
         }
         
-        private void ValidateBitKeySwitch(int index, AnimatorControllerLayer layer, AnimatorController controller)
-        {
-            string trueSwitchName = string.Format(BitKeySwitchName, "True", index);
-            string falseSwitchName = string.Format(BitKeySwitchName, "False", index);
-            
-            if (layer.stateMachine.states.All(s => s.state.name != trueSwitchName))
-            {
-                Debug.Log($"Layer missing BitKeySwtich. {trueSwitchName}");
-                AddBitKeySwitch(index, layer, controller);
-            }
-            else
-            {
-                Debug.Log($"Layer BitKey Switch Validated {trueSwitchName}.");
-                AssetDatabase.SaveAssets();;
-            }
-            
-            if (layer.stateMachine.states.All(s => s.state.name != falseSwitchName))
-            {
-                Debug.Log($"Layer missing BitKeySwtich. {falseSwitchName}");
-                AddBitKeySwitch(index, layer, controller);
-            }
-            else
-            {
-                Debug.Log($"Layer BitKey Switch Validated {falseSwitchName}.");
-                AssetDatabase.SaveAssets();;
-            }
-        }
-
         void CreateLayer(int index, AnimatorController controller)
         {
             Debug.Log($"Creating layer: {_avaCryptKeyNames[index]}");
@@ -251,7 +221,7 @@ namespace GeoTetra.GTAvaCrypt
             string controllerPath = AssetDatabase.GetAssetPath(controller);
             foreach (Object subObject in AssetDatabase.LoadAllAssetsAtPath(controllerPath))
             {
-                if (subObject.hideFlags == HideFlags.None && subObject.name.Contains("AvaCrypt"))
+                if (subObject != null && subObject.hideFlags == HideFlags.None && subObject.name.Contains("AvaCrypt"))
                 {
                     AssetDatabase.RemoveObjectFromAsset(subObject);
                 }
