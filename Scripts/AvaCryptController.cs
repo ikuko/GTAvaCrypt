@@ -213,6 +213,7 @@ namespace GeoTetra.GTAvaCrypt
             AnimatorState falseState = layer.stateMachine.AddState(falseSwitchName);
             falseState.motion = _clipsFalse[index];
             falseState.speed = 1;
+            falseState.writeDefaultValues = false;
             
             AnimatorCondition falseCondition = new AnimatorCondition
             {
@@ -229,7 +230,8 @@ namespace GeoTetra.GTAvaCrypt
             AnimatorState trueState = layer.stateMachine.AddState(trueSwitchName);
             trueState.motion = _clipsTrue[index];
             trueState.speed = 1;
-            
+            trueState.writeDefaultValues = false;
+
             AnimatorCondition trueCondition = new AnimatorCondition
             {
                 mode = AnimatorConditionMode.If,

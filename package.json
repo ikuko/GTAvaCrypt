@@ -1,0 +1,18 @@
+{
+  "name": "com.d-chrono.gtavacrypt",
+  "version": "2.1.0",
+  "displayName": "GTAvaCrypt",
+  "description": "",
+  "unity": "2019.4",
+  "unityRelease": "",
+  "dependencies": {
+  },
+  "keywords": [
+    ""
+  ],
+  "author": {
+    "name": "ikuko",
+    "email": "magi.ikuko@gmail.com",
+    "url": "https://twitter.com/magi_ikuko"
+  }
+}

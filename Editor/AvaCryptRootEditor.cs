@@ -1,6 +1,10 @@
 ﻿using UnityEditor;
 using UnityEngine;
 
+#if UNITY_EDITOR
+using VRC.Core;
+#endif
+
 namespace GeoTetra.GTAvaCrypt
 {
     [CustomEditor(typeof(AvaCryptV2Root))]
@@ -40,6 +44,19 @@ namespace GeoTetra.GTAvaCrypt
             {
                 avaCryptV2Root.WriteBitKeysToExpressions();
             }
+
+#if UNITY_EDITOR
+            EditorGUILayout.Space();
+            GUILayout.Label("Assign BlueprintID.");
+            var pipelineManager = avaCryptV2Root?.GetComponent<PipelineManager>();
+            using (new EditorGUI.DisabledScope(pipelineManager == null || !string.IsNullOrWhiteSpace(pipelineManager.blueprintId)))
+            {
+                if (GUILayout.Button("Assign BlueprintID"))
+                {
+                    pipelineManager.AssignId();
+                }
+            }
+#endif
             EditorGUILayout.PropertyField(_vrcSavedParamsPathProperty);
 
             EditorGUILayout.Space();

@@ -56,16 +56,17 @@ namespace GeoTetra.GTAvaCrypt
                 return null;
             }
             
-            Animator animator = GetComponent<Animator>();
-            if (animator == null)
+            RuntimeAnimatorController runtimeController = null;
+#if VRC_SDK_VRCSDK3
+            var descriptor = GetComponent<VRCAvatarDescriptor>();
+            if(descriptor != null)
             {
-                EditorUtility.DisplayDialog("No Animator.", 
-                    "Add an animator to the Avatar's root GameObject.", 
-                    "Ok");
-                return null;
+                runtimeController = descriptor.baseAnimationLayers
+                    .Where(x => x.type == VRCAvatarDescriptor.AnimLayerType.FX)
+                    .Select(x => x.animatorController as AnimatorController)
+                    .FirstOrDefault();
             }
-            
-            RuntimeAnimatorController runtimeController = animator.runtimeAnimatorController;
+#endif
             if(runtimeController == null)
             {
                 EditorUtility.DisplayDialog("Animator has no AnimatorController.", 
@@ -106,12 +107,13 @@ namespace GeoTetra.GTAvaCrypt
             
             _avaCryptMesh.InitializeRandoms(_bitKeys.Length);
             
-            MeshFilter[] meshFilters = encodedGameObject.GetComponentsInChildren<MeshFilter>();
+            MeshFilter[] meshFilters = encodedGameObject.GetComponentsInChildren<MeshFilter>(true);
             foreach (MeshFilter meshFilter in meshFilters)
             {
-                if (meshFilter.GetComponent<MeshRenderer>() != null)
+                MeshRenderer meshRenderer = meshFilter.GetComponent<MeshRenderer>();
+                if (meshRenderer != null)
                 {
-                    var materials = meshFilter.GetComponent<MeshRenderer>().sharedMaterials;
+                    var materials = meshRenderer.sharedMaterials;
 
                     foreach (var mat in materials)
                     {
@@ -124,7 +126,7 @@ namespace GeoTetra.GTAvaCrypt
                 }
             }
             
-            SkinnedMeshRenderer[] skinnedMeshRenderers = encodedGameObject.GetComponentsInChildren<SkinnedMeshRenderer>();
+            SkinnedMeshRenderer[] skinnedMeshRenderers = encodedGameObject.GetComponentsInChildren<SkinnedMeshRenderer>(true);
             foreach (SkinnedMeshRenderer skinnedMeshRenderer in skinnedMeshRenderers)
             {
                 var materials = skinnedMeshRenderer.sharedMaterials;
